@@ -53,35 +53,36 @@ class HtmlParser {
 				HtmlTag endTag = new HtmlTag(tag.tagStr);
 				HtmlElement element = new HtmlElement(startTag, endTag);
 				int depthInt = depth.incrementAndGet();
-				Tag parrentTag = null;
-				if (!stack.empty()) {
-					parrentTag = stack.peek();
-				}
 				if (depthInt == 1) {
 					String value = StringUtils.substring(html, startTempTag.endIndex + 1, tag.startIndex - 1).trim();
 					element.setValue(value);
-					if (null != parrentTag) {
-						List<HtmlElement> parrentSubElements = map.get(parrentTag);
-						parrentSubElements.add(element);
-					}
 				} else if (depthInt >= 2) {
 					List<HtmlElement> subElements = map.get(startTempTag);
 					element.appendSubElements(subElements);
-					if (null != parrentTag) {
-						List<HtmlElement> parrentSubElements = map.get(parrentTag);
-						parrentSubElements.add(element);
-					}
 				}
+				putSubElementIntoMap(element);
 				result = element;
 			} else if (tag.isSingleTag()) {
 				HtmlTag startTag = new HtmlTag(tag.tagStr);
 				HtmlElement element = new HtmlElement(startTag, null);
+				putSubElementIntoMap(element);
 			}
 		}
 		return result;
 	}
 
-	static class Tag {
+	private void putSubElementIntoMap(HtmlElement element) {
+		Tag parrentTag = null;
+		if (!stack.empty()) {
+			parrentTag = stack.peek();
+		}
+		if (null != parrentTag) {
+			List<HtmlElement> parrentSubElements = map.get(parrentTag);
+			parrentSubElements.add(element);
+		}
+	}
+
+	class Tag {
 
 		final int startIndex;
 

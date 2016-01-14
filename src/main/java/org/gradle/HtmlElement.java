@@ -1,6 +1,5 @@
 package org.gradle;
 
-import java.text.MessageFormat;
 import java.util.List;
 
 import com.google.common.collect.Lists;
@@ -40,25 +39,31 @@ class HtmlElement {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append(MessageFormat.format("{0}", startTag.getTagStr()));
-		if (subElements.size() == 0) {
-			sb.append(value);
-		} else {
-			sb.append("\n");
-			subElements.forEach(element -> {
-				appendIndentation(sb);
-				sb.append(element.toString());
-			});
-		}
-		sb.append(MessageFormat.format("{0}\n", endTag.getTagStr()));
+		int depth = -1;
+		append(sb, depth);
 		return sb.toString();
 	}
 
-	private void appendIndentation(StringBuilder sb) {
-		sb.append(" ");
-		sb.append(" ");
-		sb.append(" ");
-		sb.append(" ");
+	private void append(StringBuilder sb, int depth) {
+		depth = depth + 1;
+		if (null != value) {
+			appendIndentation(sb, depth);
+			sb.append(startTag.getTagStr() + value + endTag.getTagStr() + "\n");
+		} else {
+			appendIndentation(sb, depth);
+			sb.append(startTag.getTagStr() + "\n");
+			for (HtmlElement element : subElements) {
+				element.append(sb, depth);
+			}
+			appendIndentation(sb, depth);
+			sb.append(endTag.getTagStr() + "\n");
+		}
+	}
+
+	private void appendIndentation(StringBuilder sb, int depth) {
+		for (int i = 0; i < 4 * depth; i++) {
+			sb.append(" ");
+		}
 	}
 
 }

@@ -12,7 +12,7 @@ import org.junit.Test;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
-class HtmlParserTest {
+public class HtmlParserTest {
 
 	@Test
 	public void parseTest() throws IOException {
