@@ -14,12 +14,21 @@ import com.google.common.collect.Maps;
 
 class HtmlParser {
 
+	/**
+	 * raw html code.
+	 */
 	private String html;
 
+	/**
+	 * this stack holds start tag.
+	 */
 	private Stack<Tag> stack;
 
 	private AtomicInteger depth;
 
+	/**
+	 * this map holds sub htmlElements waiting for appending to parent.
+	 */
 	private Map<Tag, List<HtmlElement>> map;
 
 	private HtmlElement htmlElement;
@@ -27,6 +36,12 @@ class HtmlParser {
 	public HtmlParser() {
 	}
 
+	/**
+	 * build method,return a HtmlParser instance.
+	 * 
+	 * @param html
+	 * @return
+	 */
 	public HtmlParser on(String html) {
 		this.html = html.trim();
 		this.stack = new Stack<Tag>();
@@ -35,13 +50,18 @@ class HtmlParser {
 		return this;
 	}
 
+	/**
+	 * parse raw html code to a tree structure.
+	 * 
+	 * @return
+	 */
 	public HtmlElement parse() {
 		Pattern pattern = Pattern.compile("<(\"[^\"]*\"|'[^']*'|[^'\">])*>");
 		Matcher matcher = pattern.matcher(html);
 		List<Tag> tempTags = Lists.newArrayList();
 		while (matcher.find()) {
 			TagBuilder tagBuilder = new TagBuilder();
-			Tag tag = tagBuilder.getTag(matcher.start(), matcher.end(), matcher.group());
+			Tag tag = tagBuilder.build(matcher.start(), matcher.end(), matcher.group());
 			tempTags.add(tag);
 		}
 		for (Tag tag : tempTags) {
@@ -79,7 +99,7 @@ class HtmlParser {
 	}
 
 	class TagBuilder {
-		Tag getTag(int startIndex, int endIndex, String tagStr) {
+		Tag build(int startIndex, int endIndex, String tagStr) {
 			if (isStartTag(tagStr)) {
 				return new StartTag(startIndex, endIndex, tagStr);
 			} else if (isEndTag(tagStr)) {
@@ -115,7 +135,6 @@ class HtmlParser {
 			stack.push(this);
 			map.put(this, Lists.newArrayList());
 			depth.set(0);
-
 		}
 
 	}
