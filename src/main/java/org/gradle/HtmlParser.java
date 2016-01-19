@@ -31,7 +31,7 @@ class HtmlParser {
 	 */
 	private Map<Tag, List<HtmlElement>> map;
 
-	private HtmlElement htmlElement;
+	private List<HtmlElement> topLevelElemets;
 
 	public HtmlParser() {
 	}
@@ -47,6 +47,7 @@ class HtmlParser {
 		this.stack = new Stack<Tag>();
 		this.depth = new AtomicInteger(0);
 		this.map = Maps.newHashMap();
+		this.topLevelElemets = Lists.newArrayList();
 		return this;
 	}
 
@@ -67,7 +68,13 @@ class HtmlParser {
 		for (Tag tag : tempTags) {
 			tag.apply();
 		}
-		return htmlElement;
+		if (topLevelElemets.size() == 1) {
+			return topLevelElemets.get(0);
+		} else {
+			HtmlElement result = new HtmlElement(new HtmlTag("<html>"), new HtmlTag("</html>"));
+			result.appendSubElements(topLevelElemets);
+			return result;
+		}
 	}
 
 	private void putSubElementIntoMap(HtmlElement element) {
@@ -76,6 +83,8 @@ class HtmlParser {
 			parrentTag = stack.peek();
 			List<HtmlElement> parrentSubElements = map.get(parrentTag);
 			parrentSubElements.add(element);
+		} else {
+			topLevelElemets.add(element);
 		}
 	}
 
@@ -163,7 +172,6 @@ class HtmlParser {
 					element.appendSubElements(subElements);
 				}
 				putSubElementIntoMap(element);
-				htmlElement = element;
 			} else {
 				// TODO unmatch clause
 			}

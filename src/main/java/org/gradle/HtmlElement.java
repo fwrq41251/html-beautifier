@@ -45,14 +45,19 @@ class HtmlElement {
 		if (null != value) {
 			appendIndentation(sb, depth);
 			sb.append(startTag.getTagStr() + value + endTag.getTagStr() + "\n");
-		} else {
+		} else if (null != startTag) {
 			appendIndentation(sb, depth);
 			sb.append(startTag.getTagStr() + "\n");
 			for (HtmlElement element : subElements) {
 				element.append(sb, depth);
 			}
 			appendIndentation(sb, depth);
-			sb.append(endTag.getTagStr() + "\n");
+			if (null != endTag)
+				sb.append(endTag.getTagStr() + "\n");
+		} else {
+			for (HtmlElement element : subElements) {
+				element.append(sb, depth);
+			}
 		}
 	}
 

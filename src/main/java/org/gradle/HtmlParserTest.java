@@ -43,24 +43,24 @@ public class HtmlParserTest {
 		Pattern pattern = Pattern.compile("(</.+>)");
 		Matcher matcher = pattern.matcher(raw);
 		int group = matcher.groupCount();
-		System.out.println(group);
+		System.out.println(group); 		// "1"
 		boolean bool = matcher.find();
-		System.out.println(bool);
+		System.out.println(bool); 		// "true"
 		int start = matcher.start();
-		System.out.println(start);
+		System.out.println(start); 		// "0"
 		int end = matcher.end();
-		System.out.println(end);
+		System.out.println(end); 		// "8"
 	}
 
 	@Test
 	public void regexTest3() {
-		String raw = "<table class='simple-table' width='100%' border='1' cellspacing='0'>";
+		String raw = "</table class='simple-table' width='100%' border='1' cellspacing='0'>";
 		Pattern pattern = Pattern.compile("<(/?)(\\w+)(\\s+\\S+)*(/?)>");
 		Matcher matcher = pattern.matcher(raw);
 		matcher.find();
-		System.out.println(matcher.group(1));
-		System.out.println(matcher.group(2));
-		System.out.println(matcher.group(4));
+		System.out.println(matcher.group(1)); // "/"
+		System.out.println(matcher.group(2)); // "table"
+		System.out.println(matcher.group(4)); // ""
 	}
 
 }
