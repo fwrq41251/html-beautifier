@@ -59,8 +59,8 @@ class HtmlParser {
 		Pattern pattern = Pattern.compile("<(\"[^\"]*\"|'[^']*'|[^'\">])*>");
 		Matcher matcher = pattern.matcher(html);
 		List<Tag> tempTags = Lists.newArrayList();
+		TagBuilder tagBuilder = new TagBuilder();
 		while (matcher.find()) {
-			TagBuilder tagBuilder = new TagBuilder();
 			Tag tag = tagBuilder.build(matcher.start(), matcher.end(), matcher.group());
 			tempTags.add(tag);
 		}
@@ -145,22 +145,38 @@ class HtmlParser {
 			super(startIndex, endIndex, tagStr);
 		}
 
+		private Pattern pattern = Pattern.compile("<(/?)(\\w+)(\\s+\\S+)*(/?)>");
+
 		@Override
 		void apply() {
 			Tag startTempTag = stack.pop();
-			HtmlTag startTag = new HtmlTag(startTempTag.tagStr);
-			HtmlTag endTag = new HtmlTag(this.tagStr);
-			HtmlElement element = new HtmlElement(startTag, endTag);
-			int depthInt = depth.incrementAndGet();
-			if (depthInt == 1) {
-				String value = StringUtils.substring(html, startTempTag.endIndex + 1, this.startIndex - 1).trim();
-				element.setValue(value);
-			} else if (depthInt >= 2) {
-				List<HtmlElement> subElements = map.get(startTempTag);
-				element.appendSubElements(subElements);
+			if (startTagMatchEndTag(startTempTag.tagStr)) {
+				HtmlTag startTag = new HtmlTag(startTempTag.tagStr);
+				HtmlTag endTag = new HtmlTag(this.tagStr);
+				HtmlElement element = new HtmlElement(startTag, endTag);
+				int depthInt = depth.incrementAndGet();
+				if (depthInt == 1) {
+					String value = StringUtils.substring(html, startTempTag.endIndex + 1, this.startIndex - 1).trim();
+					element.setValue(value);
+				} else if (depthInt >= 2) {
+					List<HtmlElement> subElements = map.get(startTempTag);
+					element.appendSubElements(subElements);
+				}
+				putSubElementIntoMap(element);
+				htmlElement = element;
+			} else {
+				// TODO unmatch clause
 			}
-			putSubElementIntoMap(element);
-			htmlElement = element;
+		}
+
+		private boolean startTagMatchEndTag(String startTagStr) {
+			Matcher matcher1 = pattern.matcher(startTagStr);
+			matcher1.find();
+			String startTagType = matcher1.group(2);
+			Matcher matcher2 = pattern.matcher(tagStr);
+			matcher2.find();
+			String endTagType = matcher2.group(2);
+			return StringUtils.equals(startTagType, endTagType);
 		}
 
 	}

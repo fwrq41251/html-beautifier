@@ -32,10 +32,6 @@ class HtmlElement {
 		this.value = value;
 	}
 
-	/**
-	 * XXX recursive toString() invoke, bad performance.This may move to the
-	 * Parser class.
-	 */
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
