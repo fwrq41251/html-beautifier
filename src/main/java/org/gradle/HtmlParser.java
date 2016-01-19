@@ -22,6 +22,8 @@ class HtmlParser {
 
 	private Map<Tag, List<HtmlElement>> map;
 
+	private HtmlElement htmlElement;
+
 	public HtmlParser() {
 	}
 
@@ -34,55 +36,30 @@ class HtmlParser {
 	}
 
 	public HtmlElement parse() {
-		HtmlElement result = null;
 		Pattern pattern = Pattern.compile("<(\"[^\"]*\"|'[^']*'|[^'\">])*>");
 		Matcher matcher = pattern.matcher(html);
 		List<Tag> tempTags = Lists.newArrayList();
 		while (matcher.find()) {
-			Tag tag = new Tag(matcher.start(), matcher.end(), matcher.group());
+			TagBuilder tagBuilder = new TagBuilder();
+			Tag tag = tagBuilder.getTag(matcher.start(), matcher.end(), matcher.group());
 			tempTags.add(tag);
 		}
 		for (Tag tag : tempTags) {
-			if (tag.isStartTag()) {
-				stack.push(tag);
-				map.put(tag, Lists.newArrayList());
-				depth.set(0);
-			} else if (tag.isEndTag()) {
-				Tag startTempTag = stack.pop();
-				HtmlTag startTag = new HtmlTag(startTempTag.tagStr);
-				HtmlTag endTag = new HtmlTag(tag.tagStr);
-				HtmlElement element = new HtmlElement(startTag, endTag);
-				int depthInt = depth.incrementAndGet();
-				if (depthInt == 1) {
-					String value = StringUtils.substring(html, startTempTag.endIndex + 1, tag.startIndex - 1).trim();
-					element.setValue(value);
-				} else if (depthInt >= 2) {
-					List<HtmlElement> subElements = map.get(startTempTag);
-					element.appendSubElements(subElements);
-				}
-				putSubElementIntoMap(element);
-				result = element;
-			} else if (tag.isSingleTag()) {
-				HtmlTag startTag = new HtmlTag(tag.tagStr);
-				HtmlElement element = new HtmlElement(startTag, null);
-				putSubElementIntoMap(element);
-			}
+			tag.apply();
 		}
-		return result;
+		return htmlElement;
 	}
 
 	private void putSubElementIntoMap(HtmlElement element) {
 		Tag parrentTag = null;
 		if (!stack.empty()) {
 			parrentTag = stack.peek();
-		}
-		if (null != parrentTag) {
 			List<HtmlElement> parrentSubElements = map.get(parrentTag);
 			parrentSubElements.add(element);
 		}
 	}
 
-	class Tag {
+	abstract class Tag {
 
 		final int startIndex;
 
@@ -97,47 +74,89 @@ class HtmlParser {
 			this.tagStr = tagStr;
 		}
 
-		boolean isStartTag() {
+		abstract void apply();
+
+	}
+
+	class TagBuilder {
+		Tag getTag(int startIndex, int endIndex, String tagStr) {
+			if (isStartTag(tagStr)) {
+				return new StartTag(startIndex, endIndex, tagStr);
+			} else if (isEndTag(tagStr)) {
+				return new EndTag(startIndex, endIndex, tagStr);
+			} else if (isSingleTag(tagStr)) {
+				return new SingleTag(startIndex, endIndex, tagStr);
+			} else {
+				throw new IllegalArgumentException("tagStr does not match anything");
+			}
+		}
+
+		boolean isStartTag(String tagStr) {
 			return !StringUtils.startsWith(tagStr, "</") && !StringUtils.endsWith(tagStr, "/>");
 		}
 
-		boolean isEndTag() {
+		boolean isEndTag(String tagStr) {
 			return StringUtils.startsWith(tagStr, "</");
 		}
 
-		boolean isSingleTag() {
+		boolean isSingleTag(String tagStr) {
 			return StringUtils.endsWith(tagStr, "/>");
 		}
+	}
 
-		@Override
-		public int hashCode() {
-			final int prime = 31;
-			int result = 1;
-			result = prime * result + endIndex;
-			result = prime * result + startIndex;
-			result = prime * result + ((tagStr == null) ? 0 : tagStr.hashCode());
-			return result;
+	class StartTag extends Tag {
+
+		StartTag(int startIndex, int endIndex, String tagStr) {
+			super(startIndex, endIndex, tagStr);
 		}
 
 		@Override
-		public boolean equals(Object obj) {
-			if (this == obj)
-				return true;
-			if (obj == null)
-				return false;
-			if (getClass() != obj.getClass())
-				return false;
-			Tag other = (Tag) obj;
-			if (endIndex != other.endIndex)
-				return false;
-			if (startIndex != other.startIndex)
-				return false;
-			if (tagStr == null) {
-				if (other.tagStr != null)
-					return false;
-			} else if (!tagStr.equals(other.tagStr))
-				return false;
-			return true;
+		void apply() {
+			stack.push(this);
+			map.put(this, Lists.newArrayList());
+			depth.set(0);
+
+		}
+
+	}
+
+	class EndTag extends Tag {
+
+		EndTag(int startIndex, int endIndex, String tagStr) {
+			super(startIndex, endIndex, tagStr);
+		}
+
+		@Override
+		void apply() {
+			Tag startTempTag = stack.pop();
+			HtmlTag startTag = new HtmlTag(startTempTag.tagStr);
+			HtmlTag endTag = new HtmlTag(this.tagStr);
+			HtmlElement element = new HtmlElement(startTag, endTag);
+			int depthInt = depth.incrementAndGet();
+			if (depthInt == 1) {
+				String value = StringUtils.substring(html, startTempTag.endIndex + 1, this.startIndex - 1).trim();
+				element.setValue(value);
+			} else if (depthInt >= 2) {
+				List<HtmlElement> subElements = map.get(startTempTag);
+				element.appendSubElements(subElements);
+			}
+			putSubElementIntoMap(element);
+			htmlElement = element;
+		}
+
+	}
+
+	class SingleTag extends Tag {
+
+		SingleTag(int startIndex, int endIndex, String tagStr) {
+			super(startIndex, endIndex, tagStr);
+		}
+
+		@Override
+		void apply() {
+			HtmlTag startTag = new HtmlTag(this.tagStr);
+			HtmlElement element = new HtmlElement(startTag, null);
+			putSubElementIntoMap(element);
 		}
 
 	}

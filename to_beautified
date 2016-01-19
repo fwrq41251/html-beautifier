@@ -1,23 +1,26 @@
-<table class="simple-table" width="100%" border="1" cellspacing="0">
-                	       			<thead>
-                						<tr>
-                							<th>
-                							易金融用户名</th>
-                							<th>身份证号</th>
-                							<th>投资金额（元）</th>
-                							<th>投资期限</th>
-                							<th>全部应收（元）</th>
-                							<th>购买日期</th>
-                						</tr>
-                	       			</thead>
-                	       			<tbody id="investor-table">
-                						<tr>
-											<td>hehehe</td>
-                                            <td>5552222222222</td>
-											<td>55555</td>
-                                            <td>555</td>
-											<td>2255</td>
-                                            <td>2014-44-55</td>
-										</tr>
-                	       			</tbody>
-                	       		</table>
+<html>
+  <head>
+    <title>Sample "Hello, World" Application</title>
+  </head>
+  <body bgcolor=white>
+
+    <table border="0" cellpadding="10">
+      <tr>
+        <td>
+          <img src="images/springsource.png"></img>
+        </td>
+        <td>
+          <h1>Sample "Hello, World" Application</h1>
+        </td>
+      </tr>
+    </table>
+
+    <p>This is the home page for the HelloWorld Web application. </p>
+    <p>To prove that they work, you can execute either of the following links:</p>
+    <ul>
+      <li>To a <a href="hello.jsp">JSP page</a>.</li>
+      <li>To a <a href="hello">servlet</a>.</li>
+    </ul>
+
+  </body>
+</html>
