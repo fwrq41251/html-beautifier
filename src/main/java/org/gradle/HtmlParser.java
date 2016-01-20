@@ -33,6 +33,8 @@ class HtmlParser {
 
 	private List<HtmlElement> topLevelElemets;
 
+	private List<Tag> tagList;
+
 	public HtmlParser() {
 	}
 
@@ -48,6 +50,7 @@ class HtmlParser {
 		this.depth = new AtomicInteger(0);
 		this.map = Maps.newHashMap();
 		this.topLevelElemets = Lists.newArrayList();
+		this.tagList = Lists.newArrayList();
 		return this;
 	}
 
@@ -59,13 +62,12 @@ class HtmlParser {
 	public HtmlElement parse() {
 		Pattern pattern = Pattern.compile("<(\"[^\"]*\"|'[^']*'|[^'\">])*>");
 		Matcher matcher = pattern.matcher(html);
-		List<Tag> tempTags = Lists.newArrayList();
 		TagBuilder tagBuilder = new TagBuilder();
 		while (matcher.find()) {
 			Tag tag = tagBuilder.build(matcher.start(), matcher.end(), matcher.group());
-			tempTags.add(tag);
+			tagList.add(tag);
 		}
-		for (Tag tag : tempTags) {
+		for (Tag tag : tagList) {
 			tag.apply();
 		}
 		if (topLevelElemets.size() == 1) {
@@ -104,6 +106,11 @@ class HtmlParser {
 		}
 
 		abstract void apply();
+
+		@Override
+		public String toString() {
+			return tagStr;
+		}
 
 	}
 
@@ -159,22 +166,38 @@ class HtmlParser {
 		@Override
 		void apply() {
 			Tag startTempTag = stack.pop();
-			if (startTagMatchEndTag(startTempTag.tagStr)) {
+			while (!startTagMatchEndTag(startTempTag.tagStr)) {
 				HtmlTag startTag = new HtmlTag(startTempTag.tagStr);
-				HtmlTag endTag = new HtmlTag(this.tagStr);
-				HtmlElement element = new HtmlElement(startTag, endTag);
-				int depthInt = depth.incrementAndGet();
-				if (depthInt == 1) {
-					String value = StringUtils.substring(html, startTempTag.endIndex + 1, this.startIndex - 1).trim();
-					element.setValue(value);
-				} else if (depthInt >= 2) {
-					List<HtmlElement> subElements = map.get(startTempTag);
-					element.appendSubElements(subElements);
-				}
+				HtmlElement element = new HtmlElement(startTag, null);
+				setValue(startTempTag, element);
 				putSubElementIntoMap(element);
-			} else {
-				// TODO unmatch clause
+				if (!map.get(startTempTag).isEmpty()) {
+					List<HtmlElement> subElements = map.get(startTempTag);
+					putSubElementsIntoMap(subElements);
+				}
+				depth.set(0);
+				startTempTag = stack.pop();
 			}
+			HtmlTag startTag = new HtmlTag(startTempTag.tagStr);
+			HtmlTag endTag = new HtmlTag(this.tagStr);
+			HtmlElement element = new HtmlElement(startTag, endTag);
+			int depthInt = depth.incrementAndGet();
+			if (depthInt == 1 && map.get(startTempTag).isEmpty()) {
+				String value = StringUtils.substring(html, startTempTag.endIndex + 1, this.startIndex - 1).trim();
+				element.setValue(value);
+			} else {
+				List<HtmlElement> subElements = map.get(startTempTag);
+				element.appendSubElements(subElements);
+			}
+			putSubElementIntoMap(element);
+		}
+
+		private void setValue(Tag startTempTag, HtmlElement element) {
+			int index = tagList.indexOf(startTempTag);
+			Tag followingTag = tagList.get(index + 1);
+			String value = StringUtils.substring(html, startTempTag.endIndex + 1, followingTag.startIndex - 1).trim();
+			if (StringUtils.isNotBlank(value))
+				element.setValue(value);
 		}
 
 		private boolean startTagMatchEndTag(String startTagStr) {
@@ -185,6 +208,17 @@ class HtmlParser {
 			matcher2.find();
 			String endTagType = matcher2.group(2);
 			return StringUtils.equals(startTagType, endTagType);
+		}
+
+		private void putSubElementsIntoMap(List<HtmlElement> elements) {
+			Tag parrentTag = null;
+			if (!stack.empty()) {
+				parrentTag = stack.peek();
+				List<HtmlElement> parrentSubElements = map.get(parrentTag);
+				parrentSubElements.addAll(elements);
+			} else {
+				topLevelElemets.addAll(elements);
+			}
 		}
 
 	}

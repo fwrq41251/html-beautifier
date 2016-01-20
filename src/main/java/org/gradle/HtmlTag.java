@@ -13,4 +13,9 @@ class HtmlTag {
 		return tagStr;
 	}
 
+	@Override
+	public String toString() {
+		return tagStr;
+	}
+
 }

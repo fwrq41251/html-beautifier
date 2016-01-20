@@ -44,16 +44,20 @@ class HtmlElement {
 		depth = depth + 1;
 		if (null != value) {
 			appendIndentation(sb, depth);
-			sb.append(startTag.getTagStr() + value + endTag.getTagStr() + "\n");
+			sb.append(startTag.getTagStr() + value);
+			if (null != endTag)
+				sb.append(endTag.getTagStr());
+			sb.append("\n");
 		} else if (null != startTag) {
 			appendIndentation(sb, depth);
 			sb.append(startTag.getTagStr() + "\n");
 			for (HtmlElement element : subElements) {
 				element.append(sb, depth);
 			}
-			appendIndentation(sb, depth);
-			if (null != endTag)
+			if (null != endTag) {
+				appendIndentation(sb, depth);
 				sb.append(endTag.getTagStr() + "\n");
+			}
 		} else {
 			for (HtmlElement element : subElements) {
 				element.append(sb, depth);
