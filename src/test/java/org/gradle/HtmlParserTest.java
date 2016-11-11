@@ -1,5 +1,9 @@
 package org.gradle;
 
+import com.google.common.collect.Lists;
+import com.google.common.io.Files;
+import org.junit.Test;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -7,17 +11,12 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.junit.Test;
-
-import com.google.common.collect.Lists;
-import com.google.common.io.Files;
-
 public class HtmlParserTest {
 
 	@Test
 	public void parseTest() throws IOException {
 		String rawHtml = Files.toString(new File("to_beautified"), Charset.defaultCharset());
-		HtmlElement html = new HtmlParser().on(rawHtml).parse();
+		HtmlElement html = HtmlParser.on(rawHtml).parse();
 		System.out.println(html);
 		// String formatted = html.toString();
 		// System.out.println(formatted);

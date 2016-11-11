@@ -1,16 +1,15 @@
 package org.gradle;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import org.apache.commons.lang.StringUtils;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.apache.commons.lang.StringUtils;
-
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 
 class HtmlParser {
 
@@ -31,32 +30,34 @@ class HtmlParser {
 	 */
 	private Map<Tag, List<HtmlElement>> map;
 
-	private List<HtmlElement> topLevelElemets;
+	private List<HtmlElement> topLevelElements;
 
 	private List<Tag> tagList;
 
-	public HtmlParser() {
+	private HtmlParser(String html, Stack<Tag> stack, AtomicInteger depth, Map<Tag, List<HtmlElement>> map,
+					   List<HtmlElement> topLevelElements, List<Tag> tagList) {
+		this.html = html;
+		this.stack = stack;
+		this.depth = depth;
+		this.map = map;
+		this.topLevelElements = topLevelElements;
+		this.tagList = tagList;
 	}
 
 	/**
 	 * build method,return a HtmlParser instance.
-	 * 
+	 *
 	 * @param html
 	 * @return
 	 */
-	public HtmlParser on(String html) {
-		this.html = html.trim();
-		this.stack = new Stack<Tag>();
-		this.depth = new AtomicInteger(0);
-		this.map = Maps.newHashMap();
-		this.topLevelElemets = Lists.newArrayList();
-		this.tagList = Lists.newArrayList();
-		return this;
+	public static HtmlParser on(String html) {
+		return new HtmlParser(html.trim(), new Stack<Tag>(), new AtomicInteger(0), Maps.newHashMap(), Lists
+				.newArrayList(), Lists.newArrayList());
 	}
 
 	/**
 	 * parse raw html code to a tree structure.
-	 * 
+	 *
 	 * @return
 	 */
 	public HtmlElement parse() {
@@ -70,23 +71,23 @@ class HtmlParser {
 		for (Tag tag : tagList) {
 			tag.apply();
 		}
-		if (topLevelElemets.size() == 1) {
-			return topLevelElemets.get(0);
+		if (topLevelElements.size() == 1) {
+			return topLevelElements.get(0);
 		} else {
 			HtmlElement result = new HtmlElement(new HtmlTag("<html>"), new HtmlTag("</html>"));
-			result.appendSubElements(topLevelElemets);
+			result.appendSubElements(topLevelElements);
 			return result;
 		}
 	}
 
 	private void putSubElementIntoMap(HtmlElement element) {
-		Tag parrentTag = null;
+		Tag parentTag = null;
 		if (!stack.empty()) {
-			parrentTag = stack.peek();
-			List<HtmlElement> parrentSubElements = map.get(parrentTag);
-			parrentSubElements.add(element);
+			parentTag = stack.peek();
+			List<HtmlElement> parentSubElements = map.get(parentTag);
+			parentSubElements.add(element);
 		} else {
-			topLevelElemets.add(element);
+			topLevelElements.add(element);
 		}
 	}
 
@@ -114,7 +115,7 @@ class HtmlParser {
 
 	}
 
-	class TagBuilder {
+	private class TagBuilder {
 		Tag build(int startIndex, int endIndex, String tagStr) {
 			if (isStartTag(tagStr)) {
 				return new StartTag(startIndex, endIndex, tagStr);
@@ -140,7 +141,7 @@ class HtmlParser {
 		}
 	}
 
-	class StartTag extends Tag {
+	private class StartTag extends Tag {
 
 		StartTag(int startIndex, int endIndex, String tagStr) {
 			super(startIndex, endIndex, tagStr);
@@ -155,7 +156,7 @@ class HtmlParser {
 
 	}
 
-	class EndTag extends Tag {
+	private class EndTag extends Tag {
 
 		EndTag(int startIndex, int endIndex, String tagStr) {
 			super(startIndex, endIndex, tagStr);
@@ -211,19 +212,19 @@ class HtmlParser {
 		}
 
 		private void putSubElementsIntoMap(List<HtmlElement> elements) {
-			Tag parrentTag = null;
+			Tag parentTag = null;
 			if (!stack.empty()) {
-				parrentTag = stack.peek();
-				List<HtmlElement> parrentSubElements = map.get(parrentTag);
+				parentTag = stack.peek();
+				List<HtmlElement> parrentSubElements = map.get(parentTag);
 				parrentSubElements.addAll(elements);
 			} else {
-				topLevelElemets.addAll(elements);
+				topLevelElements.addAll(elements);
 			}
 		}
 
 	}
 
-	class SingleTag extends Tag {
+	private class SingleTag extends Tag {
 
 		SingleTag(int startIndex, int endIndex, String tagStr) {
 			super(startIndex, endIndex, tagStr);
